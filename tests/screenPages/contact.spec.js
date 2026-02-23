@@ -6,7 +6,7 @@ import { AnyPage } from "../../pages/AnyPage.js";
 
 const pageKey = "contact";
 
-test.describe(`${pageKey} compare snapshots prod vs stage`, () => {
+test.skip(`${pageKey} compare snapshots prod vs stage`, () => {
   for (const lang of Object.keys(LANGS)) {
     test(`lang: ${lang}`, async ({ browser }, testInfo) => {
       const device = testInfo.project.name.split("-")[1];

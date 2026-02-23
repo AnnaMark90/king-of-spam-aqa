@@ -1,7 +1,6 @@
 import fs from "fs";
 import { PNG } from "pngjs";
 import pixelmatch from "pixelmatch";
-import { getSnapshotPaths } from "../utils/utils";
 
 // PageObject управляет страницей.
 // Helpers управляют окружением.
@@ -22,47 +21,40 @@ export async function closeContext(context) {
   }
 }
 
-export async function compareEnvsSnapshots({
+export async function collectEnvData({
   browser,
-  productionUrl,
-  stagingUrl,
-  lang,
-  device,
-  pageKey,
+  url,
   PageObject,
-  testInfo,
+  snapshotPath,
 }) {
-  const { production, staging, diff } = getSnapshotPaths({
-    lang,
-    device,
-    pageKey,
-  });
-
-  // ---------- PRODUCTION ----------
-  const prod = await openPageInNewContext({
+  const { context, pageObject } = await openPageInNewContext({
     browser,
-    url: productionUrl,
-    PageObject,
-  });
-
-  // ---------- STAGING ----------
-  const stage = await openPageInNewContext({
-    browser,
-    url: stagingUrl,
+    url,
     PageObject,
   });
 
   try {
-    await prod.pageObject.doScreenshot(production);
-    await stage.pageObject.doScreenshot(staging);
+    const seo = await pageObject.getSeoContent();
+    if (snapshotPath) {
+      await pageObject.doScreenshot(snapshotPath);
+    }
+    return {
+      seo,
+      snapshotPath,
+    };
   } finally {
-    await closeContext(prod.context);
-    await closeContext(stage.context);
+    await closeContext(context);
   }
+}
 
-  // ---------- COMPARE ----------
-  const prodImage = PNG.sync.read(fs.readFileSync(production));
-  const stageImage = PNG.sync.read(fs.readFileSync(staging));
+export async function compareEnvsSnapshots({
+  prodPath,
+  stagePath,
+  diffPath,
+  testInfo,
+}) {
+  const prodImage = PNG.sync.read(fs.readFileSync(prodPath));
+  const stageImage = PNG.sync.read(fs.readFileSync(stagePath));
 
   if (
     prodImage.width !== stageImage.width ||
@@ -89,14 +81,14 @@ export async function compareEnvsSnapshots({
   const totalPixels = width * height;
   const diffPercent = (mismatchPixels / totalPixels) * 100;
 
-  const allowedThreshold = 0; // допустимые %
+  const allowedThreshold = 0; // допустимый процент
 
   if (diffPercent > allowedThreshold) {
-    fs.writeFileSync(diff, PNG.sync.write(diffImage));
+    fs.writeFileSync(diffPath, PNG.sync.write(diffImage));
 
     if (testInfo) {
-      await testInfo.attach("visual-diff", {
-        path: diff,
+      await testInfo.attach("visual-diff.png", {
+        path: diffPath,
         contentType: "image/png",
       });
     }
@@ -109,122 +101,59 @@ export async function compareEnvsSnapshots({
   }
 }
 
-export async function compareEnvsSeoText({
-  browser,
-  productionUrl,
-  stagingUrl,
-  PageObject,
-  testInfo,
-}) {
-  // ---------- PRODUCTION ----------
-  const prod = await openPageInNewContext({
-    browser,
-    url: productionUrl,
-    PageObject,
-  });
+export async function compareEnvsSeo({ prodSeo, stageSeo, testInfo }) {
+  const prod = {
+    images: prodSeo.images,
+    headers: prodSeo.headers,
+    title: prodSeo.meta.title,
+    description: prodSeo.meta.description,
+    robots: prodSeo.meta.robots,
+    canonical: prodSeo.meta.canonical,
+    hreflangs: prodSeo.meta.hreflangs,
+  };
 
-  // ---------- STAGING ----------
-  const stage = await openPageInNewContext({
-    browser,
-    url: stagingUrl,
-    PageObject,
-  });
+  const stage = {
+    images: stageSeo.images,
+    headers: stageSeo.headers,
+    title: stageSeo.meta.title,
+    description: stageSeo.meta.description,
+    robots: stageSeo.meta.robots,
+    canonical: stageSeo.meta.canonical,
+    hreflangs: stageSeo.meta.hreflangs,
+  };
 
-  let prodSeo;
-  let stageSeo;
+  const diff = Object.keys(prod).reduce((acc, key) => {
+    if (JSON.stringify(prod[key]) !== JSON.stringify(stage[key])) {
+      acc[key] = {
+        prod: prod[key],
+        stage: stage[key],
+      };
+    }
+    return acc;
+  }, {});
 
-  try {
-    prodSeo = await prod.pageObject.getSeoImgAndHeaders();
-    stageSeo = await stage.pageObject.getSeoImgAndHeaders();
-  } finally {
-    await closeContext(prod.context);
-    await closeContext(stage.context);
-  }
-
-  const imagesDiff =
-    JSON.stringify(prodSeo.images) !== JSON.stringify(stageSeo.images);
-
-  const headersDiff =
-    JSON.stringify(prodSeo.headers) !== JSON.stringify(stageSeo.headers);
-
-  if (imagesDiff || headersDiff) {
+  if (Object.keys(diff).length) {
     if (testInfo) {
-      await testInfo.attach("production-seo.json", {
-        body: JSON.stringify(prodSeo, null, 2),
-        contentType: "application/json",
-      });
-
-      await testInfo.attach("staging-seo.json", {
-        body: JSON.stringify(stageSeo, null, 2),
+      await testInfo.attach("seo-diff.json", {
+        body: JSON.stringify(diff, null, 2),
         contentType: "application/json",
       });
     }
 
     throw new Error(
-      `SEO differences detected:
-      Images different: ${imagesDiff}
-      Headers different: ${headersDiff}`,
+      `SEO differences detected: ${Object.keys(diff).join(", ")}`,
     );
   }
 }
 
-// async function openPageAndDoSnapshot(page, url) {
-//   await page.goto(url, {
-//     waitUntil: "networkidle",
-//   });
-
-//   await await page.click(button_accept_cookie);
-//   await page.waitForTimeout(time_to_wait);
-
-//   const scrollHeight = await page.evaluate(() => document.body.scrollHeight);
-//   console.log("Scroll HEIGHT = " + scrollHeight);
-//   const scrollTimes = Number.parseInt(scrollHeight / 500);
-//   console.log("Scroll TIMES = " + scrollTimes);
-
-//   for (var i = 1; i < scrollTimes; i++) {
-//     console.log("i = " + i + " - " + (i <= scrollTimes) + " -> " + scrollTimes);
-//     await page.evaluate(() => {
-//       window.scrollBy({
-//         top: 500,
-//         behavior: "smooth",
-//       });
-//     });
-//     await page.waitForTimeout(time_to_wait);
-//   }
-
-//   console.log("Pages Scrolled");
-//   await page.evaluate(async () => {
-//     window.scrollTo(0, document.body.scrollHeight);
-//   });
-
-//   await page.waitForTimeout(time_to_wait);
-
-//   console.log("Pages Scrolled to Top");
-//   await page.evaluate(async () => {
-//     window.scrollTo(0, 0);
-//   });
-
-//   await page.waitForTimeout(time_to_wait);
-
-//   if (url.startsWith("https://www")) {
-//     await page.screenshot({
-//       path: "snapshots/prod/fullpage.png",
-//       fullPage: true,
-//     });
-//   }
-
-//   if (url.startsWith("https://stage")) {
-//     await page.screenshot({
-//       path: "snapshots/stage/fullpage.png",
-//       fullPage: true,
-//     });
-//   }
-// }
-
-// export async function compareEnvsSnapshots({
+// оркестратор
+// export async function compareEnvs({
 //   browser,
 //   productionUrl,
 //   stagingUrl,
+//   lang,
+//   device,
+//   pageKey,
 //   PageObject,
 //   testInfo,
 // }) {
@@ -234,77 +163,30 @@ export async function compareEnvsSeoText({
 //     pageKey,
 //   });
 
-//   // PRODUCTION
-//   const prod = await openPageInNewContext({
+//   const prodData = await collectEnvData({
 //     browser,
 //     url: productionUrl,
 //     PageObject,
+//     snapshotPath: production,
 //   });
 
-//   const prodContext = await browser.newContext();
-//   const prodPage = await prodContext.newPage();
-//   const prodObj = new PageObject(prodPage);
+//   const stageData = await collectEnvData({
+//     browser,
+//     url: stagingUrl,
+//     PageObject,
+//     snapshotPath: staging,
+//   });
 
-//   await prodObj.openPage(productionUrl);
-//   await prodObj.doScreenshot(production);
+//   await compareEnvsSnapshots({
+//     prodPath: production,
+//     stagePath: staging,
+//     diffPath: diff,
+//     testInfo,
+//   });
 
-//   await prodContext.close();
-
-//   // STAGING
-//   const stageContext = await browser.newContext();
-//   const stagePage = await stageContext.newPage();
-//   const stageObj = new PageObject(stagePage);
-
-//   await stageObj.openPage(stagingUrl);
-//   await stageObj.doScreenshot(staging);
-
-//   await stageContext.close();
-
-//   // COMPARE
-//   const prodImage = PNG.sync.read(fs.readFileSync(production));
-//   const stageImage = PNG.sync.read(fs.readFileSync(staging));
-
-//   if (
-//     prodImage.width !== stageImage.width ||
-//     prodImage.height !== stageImage.height
-//   ) {
-//     throw new Error("Images have different sizes");
-//   }
-
-//   const { width, height } = prodImage;
-//   const diffImage = new PNG({ width, height });
-
-//   const mismatchPixels = pixelmatch(
-//     prodImage.data,
-//     stageImage.data,
-//     diffImage.data,
-//     width,
-//     height,
-//     {
-//       threshold: 0.15,
-//       includeAA: false,
-//     },
-//   );
-
-//   const totalPixels = width * height;
-//   const diffPercent = (mismatchPixels / totalPixels) * 100;
-
-//   const allowedThreshold = 0; // допустимые %
-
-//   if (diffPercent > allowedThreshold) {
-//     fs.writeFileSync(diff, PNG.sync.write(diffImage));
-
-//     if (testInfo) {
-//       await testInfo.attach("visual-diff", {
-//         path: diff,
-//         contentType: "image/png",
-//       });
-//     }
-
-//     throw new Error(
-//       `Visual difference detected: ${mismatchPixels} pixels (${diffPercent.toFixed(
-//         2,
-//       )}%) differ`,
-//     );
-//   }
-//
+//   await compareEnvsSeo({
+//     prodSeo: prodData.seo,
+//     stageSeo: stageData.seo,
+//     testInfo,
+//   });
+// }

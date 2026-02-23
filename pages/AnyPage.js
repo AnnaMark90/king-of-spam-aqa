@@ -52,48 +52,71 @@ export class AnyPage {
     await this.page.waitForTimeout(300);
   }
 
-  async getSeoImgAndHeaders() {
+  async getSeoContent() {
+    // строго в DOM порядке
     const images = await this.page.$$eval("img", (imgs) =>
       imgs.map((img) => ({
-        fileName: img.src.split("/").pop() || "unknown",
         src: img.src,
         alt: img.alt,
         title: img.title,
       })),
     );
-
-    images.sort((a, b) => a.fileName.localeCompare(b.fileName));
-
     console.log("========== IMAGES ==========");
-    console.log("Number of images = " + images.length);
+    console.log("Number of images =", images.length);
     images.forEach((img) => {
-      console.log(img.fileName);
-      console.log(img.src);
-      console.log(img.alt);
-      console.log(img.title);
+      console.log("SRC:", img.src);
+      console.log("ALT:", img.alt);
+      console.log("TITLE:", img.title);
       console.log("----------");
     });
 
     const headers = await this.page.$$eval("h1, h2, h3, h4, h5, h6", (tags) =>
       tags.map((tag) => ({
-        level: tag.tagName.toLowerCase(), // 'h1', 'h2' и т.д.
+        level: tag.tagName.toLowerCase(),
         text: tag.textContent.trim(),
       })),
     );
-
-    headers.sort((a, b) => a.level.localeCompare(b.level));
-
-    console.log("========== H1...6 ==========");
-    console.log("Number of Headers = " + headers.length);
+    console.log("========== HEADERS ==========");
+    console.log("Number of headers =", headers.length);
     headers.forEach((header) => {
-      console.log(header.level);
-      console.log(header.text);
+      console.log("LEVEL:", header.level);
+      console.log("TEXT:", header.text);
       console.log("----------");
     });
+
+    const meta = await this.page.evaluate(() => {
+      const getMeta = (name) =>
+        document.querySelector(`meta[name="${name}"]`)?.content || "";
+      const hreflangs = Array.from(
+        document.querySelectorAll('link[rel="alternate"][hreflang]'),
+      ).map((link) => ({
+        hreflang: link.getAttribute("hreflang"),
+        href: link.href,
+      }));
+      return {
+        title: document.title,
+        description: getMeta("description"),
+        robots: getMeta("robots"),
+        canonical: document.querySelector('link[rel="canonical"]')?.href || "",
+        hreflangs,
+      };
+    });
+
+    console.log("========== META ==========");
+    console.log("TITLE:", meta.title);
+    console.log("DESCRIPTION:", meta.description);
+    console.log("ROBOTS:", meta.robots);
+    console.log("CANONICAL:", meta.canonical);
+    console.log("HREFLANGS:", meta.hreflangs.length);
+    meta.hreflangs.forEach((h) => {
+      console.log("hreflang:", h.hreflang, "href:", h.href);
+    });
+    console.log("----------");
 
     return {
       images,
       headers,
+      meta,
     };
   }
 
@@ -128,4 +151,4 @@ export class AnyPage {
   }
 }
 
-module.exports = { AnyPage };
+// module.exports = { AnyPage };
