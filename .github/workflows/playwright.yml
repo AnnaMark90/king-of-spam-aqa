@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       batch_name:
-        description: "Имя батча (например: batch1.txt). Оставь пустым для полного прогона."
+        description: ''
         required: false
-        default: ""
+        default: ''
 
 jobs:
   test:
@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm"
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Install Playwright Browsers
