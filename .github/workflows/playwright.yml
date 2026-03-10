@@ -19,18 +19,14 @@ jobs:
         shardTotal: [6]
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
-
       - name: Install dependencies
         run: npm ci
-
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
-
       - name: Run tests
         run: |
           if [ -z "${{ github.event.inputs.batch_name }}" ]; then
@@ -38,7 +34,6 @@ jobs:
           else
             npm run test -- --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=blob --batch=${{ github.event.inputs.batch_name }}
           fi
-
       - name: Upload Blob Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -51,3 +46,24 @@ jobs:
     if: always()
     needs: [test]
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm ci
+      - name: Download all blob reports
+        uses: actions/download-artifact@v4
+        with:
+          path: all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+      - name: Merge into HTML Report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+      - name: Upload Final Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-playwright-report
+          path: playwright-report
+          retention-days: 7
