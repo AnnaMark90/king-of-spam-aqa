@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       batch_name:
-        description: ''
+        description: 'Batch Name'
         required: false
         default: ''
 
@@ -48,7 +48,7 @@ jobs:
           retention-days: 1
           if-no-files-found: ignore 
 
- merge-reports:
+  merge-reports:
     if: always()
     needs: [test]
     runs-on: ubuntu-latest
@@ -69,24 +69,12 @@ jobs:
           pattern: blob-report-*
           merge-multiple: true
           
-<<<<<<< HEAD
-      # 1. Склеиваем blob-отчеты с помощью Allure-репортера (создаст папку allure-results)
-      - name: Merge into Allure Results
-        run: npx playwright merge-reports --reporter allure-playwright ./all-blob-reports
-        
-      # 2. Генерируем красивый Allure HTML-отчет из сырых результатов
-      - name: Generate Allure Report
-        run: npx allure generate allure-results -o allure-report --clean
-        
-      # 3. Загружаем готовый Allure-отчет в артефакты GitHub
-=======
       - name: Merge into Allure Results
         run: npx playwright merge-reports --reporter allure-playwright ./all-blob-reports
         
       - name: Generate Allure Report
         run: npx allure generate allure-results -o allure-report --clean
         
->>>>>>> 0a58e2b78dc451699815100013cb278ccbf4752a
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
         with:
