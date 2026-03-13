@@ -1,14 +1,12 @@
-﻿name: Playwright Tests
+name: Playwright Tests
 
 on:
-  push:
-    branches: ["aqa/parameterized"]
   workflow_dispatch:
     inputs:
       batch_name:
-        description: "Batch Name"
+        description: ''
         required: false
-        default: ""
+        default: ''
 
 jobs:
   test:
@@ -21,23 +19,26 @@ jobs:
         shardTotal: [6]
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm"
+          cache: 'npm'
+          
       - name: Install deps
         run: npm ci
+        
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
-
+        
       - name: Run default
         if: github.event.inputs.batch_name == '' || github.event.inputs.batch_name == null
         run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=blob
-
+        
       - name: Run batch
         if: github.event.inputs.batch_name != '' && github.event.inputs.batch_name != null
         run: npm run test -- --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --reporter=blob --batch=${{ github.event.inputs.batch_name }}
-
+        
       - name: Upload Blob
         if: always()
         uses: actions/upload-artifact@v4
@@ -45,7 +46,7 @@ jobs:
           name: blob-report-${{ matrix.shardIndex }}
           path: blob-report
           retention-days: 1
-          if-no-files-found: ignore
+          if-no-files-found: ignore 
 
  merge-reports:
     if: always()
@@ -68,6 +69,7 @@ jobs:
           pattern: blob-report-*
           merge-multiple: true
           
+<<<<<<< HEAD
       # 1. Склеиваем blob-отчеты с помощью Allure-репортера (создаст папку allure-results)
       - name: Merge into Allure Results
         run: npx playwright merge-reports --reporter allure-playwright ./all-blob-reports
@@ -77,6 +79,14 @@ jobs:
         run: npx allure generate allure-results -o allure-report --clean
         
       # 3. Загружаем готовый Allure-отчет в артефакты GitHub
+=======
+      - name: Merge into Allure Results
+        run: npx playwright merge-reports --reporter allure-playwright ./all-blob-reports
+        
+      - name: Generate Allure Report
+        run: npx allure generate allure-results -o allure-report --clean
+        
+>>>>>>> 0a58e2b78dc451699815100013cb278ccbf4752a
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
         with:
