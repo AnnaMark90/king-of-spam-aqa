@@ -22,7 +22,9 @@
   "homepage": "https://github.com/github4ta/king-of-spam#readme",
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "@types/node": "^25.3.0"
+    "@types/node": "^25.3.0",
+    "allure-commandline": "^2.38.0",
+    "allure-playwright": "^3.6.0"
   },
   "dependencies": {
     "pixelmatch": "^7.1.0",

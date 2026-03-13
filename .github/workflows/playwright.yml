@@ -47,28 +47,39 @@ jobs:
           retention-days: 1
           if-no-files-found: ignore
 
-  merge-reports:
+ merge-reports:
     if: always()
     needs: [test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          
       - name: Install deps
         run: npm ci
+        
       - name: Download blobs
         uses: actions/download-artifact@v4
         with:
           path: all-blob-reports
           pattern: blob-report-*
           merge-multiple: true
-      - name: Merge Reports
-        run: npx playwright merge-reports --reporter html ./all-blob-reports
-      - name: Upload Final
+          
+      # 1. Склеиваем blob-отчеты с помощью Allure-репортера (создаст папку allure-results)
+      - name: Merge into Allure Results
+        run: npx playwright merge-reports --reporter allure-playwright ./all-blob-reports
+        
+      # 2. Генерируем красивый Allure HTML-отчет из сырых результатов
+      - name: Generate Allure Report
+        run: npx allure generate allure-results -o allure-report --clean
+        
+      # 3. Загружаем готовый Allure-отчет в артефакты GitHub
+      - name: Upload Allure Report
         uses: actions/upload-artifact@v4
         with:
-          name: final-playwright-report
-          path: playwright-report
-          retention-days: 7
+          name: allure-html-report
+          path: allure-report
+          retention-days: 14

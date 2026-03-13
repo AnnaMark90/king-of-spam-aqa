@@ -6,13 +6,23 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 2,
   timeout: 5 * 60 * 1000,
-  reporter: [["html", { open: "never" }]],
+  reporter: [
+    ["html"],
+    ["blob"],
+    [
+      "allure-playwright",
+      {
+        detail: true,
+        outputFolder: "allure-results",
+        suiteTitle: false,
+      },
+    ],
+  ],
   use: {
     trace: "on-first-retry",
     ignoreHTTPSErrors: true,
     actionTimeout: 15000,
     navigationTimeout: 60000,
-    // headless: false,
   },
 
   projects: [
