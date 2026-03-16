@@ -64,19 +64,6 @@ export async function collectEnvData({
       safeRun(pageObject.getFunctionalData(), null, `getFunctionalData ${url}`),
     ]);
 
-    // if (snapshotPath) {
-    //   await safeRun(
-    //     preparePageForScreenshot(page),
-    //     null,
-    //     `preparePageForScreenshot ${url}`,
-    //   );
-    //   await safeRun(
-    //     pageObject.doScreenshot(snapshotPath),
-    //     null,
-    //     `doScreenshot ${url}`,
-    //   );
-    // }
-
     let snapshotPaths = snapshotPath ? [snapshotPath] : null;
 
     if (snapshotPath) {

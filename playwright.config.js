@@ -69,27 +69,4 @@ export default defineConfig({
     //   },
     // },
   ],
-  // projects: [
-  //   {
-  //     name: "compare-desktop",
-  //     use: {
-  //       browserName: "chromium",
-  //       viewport: { width: 1920, height: 1080 },
-  //     },
-  //   },
-  //   {
-  //     name: "compare-tablet",
-  //     use: {
-  //       browserName: "chromium",
-  //       ...devices["iPad Pro 11"],
-  //     },
-  //   },
-  //   {
-  //     name: "compare-mobile",
-  //     use: {
-  //       browserName: "chromium",
-  //       ...devices["Pixel 7"],
-  //     },
-  //   },
-  // ],
 });

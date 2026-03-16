@@ -150,57 +150,6 @@ export async function preparePageForScreenshot(page) {
 
   await page.evaluate(() => document.fonts.ready).catch(() => {});
 
-  // let scrolls = 0;
-  // const maxScrolls = 40;
-  // let currentScrollY = 0;
-  // let lastScrollY = -1;
-
-  // while (scrolls < maxScrolls) {
-  //   await page.mouse.wheel(0, 600);
-
-  //   await page.evaluate(() => {
-  //     document.querySelectorAll("img").forEach((img) => {
-  //       if (img.loading === "lazy") {
-  //         img.removeAttribute("loading");
-  //         img.setAttribute("loading", "eager");
-  //         img.setAttribute("fetchpriority", "high");
-  //       }
-  //       const lazySrc = img.getAttribute("data-src");
-  //       if (lazySrc && !img.src) img.src = lazySrc;
-  //     });
-  //   });
-
-  //   await page.waitForTimeout(400);
-
-  //   currentScrollY = await page.evaluate(() => Math.ceil(window.scrollY));
-  //   if (currentScrollY === lastScrollY) {
-  //     break;
-  //   }
-  //   lastScrollY = currentScrollY;
-  //   scrolls++;
-  // }
-
-  // await page.evaluate(async () => {
-  //   const images = Array.from(document.querySelectorAll("img")).filter(
-  //     (img) => img.src && !img.src.startsWith("data:"),
-  //   );
-  //   await Promise.all(
-  //     images.map((img) => {
-  //       if (img.complete && img.naturalHeight > 0) return Promise.resolve();
-  //       return new Promise((resolve) => {
-  //         img.onload = resolve;
-  //         img.onerror = resolve;
-  //         setTimeout(resolve, 3000);
-  //       });
-  //     }),
-  //   );
-  // });
-
-  // await page.evaluate(() => {
-  //   window.dispatchEvent(new Event("resize"));
-  //   window.scrollTo(0, 0);
-  // });
-
   await page.evaluate(async () => {
     document.querySelectorAll("img").forEach((img) => {
       if (img.loading === "lazy") img.loading = "eager";
