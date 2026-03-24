@@ -30,6 +30,7 @@
     "allure-playwright": "^3.6.0"
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "pixelmatch": "^7.1.0",
     "pngjs": "^7.0.0"
   }
