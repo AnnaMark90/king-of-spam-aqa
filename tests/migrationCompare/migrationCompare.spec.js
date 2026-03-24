@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { getSnapshotPaths } from "../../utils/utils.js";
 import { collectEnvData } from "../../helpers/pageHelpers.js";
 import { compareEnvsSnapshots } from "../../helpers/screenshotHelpers.js";
-import { compareEnvsSeo, compareFormsData } from "../../helpers/validators.js";
+import { compareEnvsSeo } from "../../helpers/validators.js";
 import { AnyPage } from "../../pages/AnyPage.js";
 import { TEST_PAGES } from "../../constants/constants.js";
 
