@@ -10,7 +10,8 @@
   "scripts": {
     "test": "npx playwright test",
     "test:smoke": "npx playwright test tests/smoke/smokeChecks.spec.js",
-    "get-urls": "node scripts/fetchSitemap.js"
+    "get-urls": "node scripts/fetchSitemap.js",
+    "get-urls:excel": "node scripts/generateExcelLinks.js"
   },
   "keywords": [],
   "author": "",
