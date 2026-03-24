@@ -28,7 +28,7 @@ export const getStatusText = (status) => {
 const batchName = (
   process.env.npm_config_batch ||
   process.env.BATCH ||
-  "testRun"
+  "excelRun"
 ).trim();
 
 const filePath = path.resolve(process.cwd(), `dataBatches/${batchName}.txt`);
