@@ -1,5 +1,3 @@
-import { log } from "node:console";
-
 export class BasePage {
   constructor(page) {
     this.page = page;
