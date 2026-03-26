@@ -4,8 +4,8 @@ export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
   retries: process.env.CI ? 1 : 0,
-  workers: 2,
-  timeout: 5 * 60 * 1000,
+  workers: 1,
+  timeout: 3 * 60 * 1000,
   reporter: [
     ["html"],
     ["blob"],
@@ -23,7 +23,7 @@ export default defineConfig({
     video: "retain-on-failure",
     ignoreHTTPSErrors: true,
     actionTimeout: 15000,
-    navigationTimeout: 60000,
+    navigationTimeout: 40000,
   },
 
   projects: [
