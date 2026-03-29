@@ -54,7 +54,7 @@ export class BasePage {
         console.log(
           "Stop for diagnosis! Status code indicates a potential issue. Please check the page manually.",
         );
-        await this.page.pause();
+        // await this.page.pause();
       }
 
       if (response && response.status() >= 400) return false;
