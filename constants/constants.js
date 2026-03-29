@@ -26,11 +26,6 @@ export const getStatusText = (status) => {
   return codes[status] || "Unknown Status";
 };
 
-console.log("Batch Name:", {
-  npm: process.env.npm_config_batch,
-  env: process.env.BATCH,
-});
-
 const batchName = (
   process.env.npm_config_batch ||
   process.env.BATCH ||
