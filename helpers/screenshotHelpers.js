@@ -112,7 +112,7 @@ export async function compareEnvsSnapshots({
     fs.writeFileSync(diffPath, diffBuffer);
     if (testInfo) {
       try {
-        await testInfo.attach("diff.png", {
+        await testInfo.attach(`diff-${path.basename(stagePath)}`, {
           path: path.resolve(diffPath),
           contentType: "image/png",
         });
