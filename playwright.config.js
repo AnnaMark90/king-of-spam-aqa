@@ -19,8 +19,8 @@ export default defineConfig({
     ],
   ],
   use: {
-    trace: "retain-on-failure",
-    video: "retain-on-failure",
+    trace: "off",
+    video: "off",
     ignoreHTTPSErrors: true,
     actionTimeout: 15000,
     navigationTimeout: 40000,

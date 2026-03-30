@@ -26,7 +26,7 @@ export function cropToIntersection(img1, img2) {
 }
 
 export async function takeSmartScreenshots(page, basePath) {
-  const MAX_HEIGHT = 16000;
+  const MAX_HEIGHT = 10000;
   const paths = [];
   const dir = path.dirname(basePath);
   const parentDir = path.dirname(dir);
@@ -43,7 +43,11 @@ export async function takeSmartScreenshots(page, basePath) {
     if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
 
     const singlePath = path.join(parentDir, `${envName}-${name}${ext}`);
-    await page.screenshot({ path: singlePath, fullPage: true });
+    await page.screenshot({
+      path: singlePath,
+      fullPage: true,
+      animations: "disabled",
+    });
     paths.push(singlePath);
   } else {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -54,10 +58,13 @@ export async function takeSmartScreenshots(page, basePath) {
       const clipY = i * MAX_HEIGHT;
       const clipHeight = Math.min(MAX_HEIGHT, bodySize.height - clipY);
 
+      await page.evaluate((y) => window.scrollTo(0, y), clipY);
+      await page.waitForTimeout(500);
+
       await page.screenshot({
         path: chunkPath,
-        fullPage: true, // принудительно снимаем всю страницу для корректного clip
         clip: { x: 0, y: clipY, width: bodySize.width, height: clipHeight },
+        animations: "disabled",
       });
       paths.push(chunkPath);
     }
