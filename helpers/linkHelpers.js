@@ -39,12 +39,16 @@ export async function checkLinks(browser, url) {
   return result;
 }
 
-export async function checkLinksStatus(request, urls) {
-  const cleanUrls = [
-    ...new Set(
-      urls.filter((u) => u?.startsWith("http")).map((u) => u.split("#")[0]),
-    ),
-  ];
+export async function checkLinksStatus(request, linksData) {
+  const cleanMap = new Map();
+  linksData.forEach((l) => {
+    if (l?.href?.startsWith("http")) {
+      const cleanHref = l.href.split("#")[0];
+      if (!cleanMap.has(cleanHref))
+        cleanMap.set(cleanHref, { href: cleanHref, parent: l.parent });
+    }
+  });
+  const cleanUrls = Array.from(cleanMap.values());
   const results = { successful: [], redirected: [], broken: [] };
   const headers = {
     "User-Agent": USER_AGENT,
@@ -54,16 +58,17 @@ export async function checkLinksStatus(request, urls) {
   for (let i = 0; i < cleanUrls.length; i += 10) {
     const batch = cleanUrls.slice(i, i + 10);
     await Promise.all(
-      batch.map(async (url) => {
+      batch.map(async ({ href, parent }) => {
         const response = await request
-          .get(url, { timeout: 25000, ignoreHTTPSErrors: true, headers })
+          .get(href, { timeout: 25000, ignoreHTTPSErrors: true, headers })
           .catch((err) => ({ status: () => 0, error: err.message }));
 
         const status = response.status();
         const record = {
-          url,
+          url: href,
           status: status || "FAILED",
           statusText: status ? getStatusText(status) : response.error,
+          parent,
         };
 
         if (status >= 200 && status < 300) results.successful.push(record);

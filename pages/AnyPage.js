@@ -172,9 +172,23 @@ export class AnyPage extends BasePage {
       const clean = (t) => (t ? t.replace(/\s+/g, " ").trim() : "");
 
       return {
-        links: Array.from(document.querySelectorAll("a[href]")).map(
-          (a) => a.href,
-        ),
+        links: Array.from(document.querySelectorAll("a[href]")).map((a) => {
+          const node = a.closest(
+            "[data-slot], [data-component], header, footer, nav, section, main",
+          );
+          const slot = node?.getAttribute("data-slot");
+          const cmp = node?.getAttribute("data-component");
+
+          const parent = slot
+            ? `slot:${slot}`
+            : cmp
+              ? `cmp:${cmp}`
+              : node?.id
+                ? `${node.tagName.toLowerCase()}#${node.id}`
+                : node?.tagName?.toLowerCase() || "Unknown";
+
+          return { href: a.href, parent };
+        }),
         forms: Array.from(document.querySelectorAll("form")).map((f) => {
           const rawFormId =
             f.id ||

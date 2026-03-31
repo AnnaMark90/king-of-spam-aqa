@@ -44,16 +44,17 @@ for (const page of TEST_PAGES) {
           expect
             .soft(
               false,
-              `Broken link: ${broken.url} (Status: ${broken.status} - ${broken.statusText})`,
+              `Broken link: ${broken.url} | Parent: ${broken.parent} | Status: ${broken.status} - ${broken.statusText}`,
             )
             .toBe(true);
         }
 
         const webLinks = links.filter(
-          (l) => l.startsWith("http") && !l.includes("google"),
+          (l) =>
+            l.href && l.href.startsWith("http") && !l.href.includes("google"),
         );
         if (webLinks.length > 0) {
-          const testLink = webLinks[0];
+          const testLink = webLinks[0].href;
           await page.goto(testLink, { waitUntil: "domcontentloaded" });
           expect(page.url()).not.toContain("404");
         }
