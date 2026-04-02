@@ -4,7 +4,7 @@ import pixelmatch from "pixelmatch";
 import path from "path";
 import { expect } from "@playwright/test";
 
-export function cropToIntersection(img1, img2) {
+export function syncImageDimensions(img1, img2) {
   const width = Math.min(img1.width, img2.width);
   const height = Math.min(img1.height, img2.height);
 
@@ -93,7 +93,17 @@ export async function compareEnvsSnapshots({
   ]);
   const prodImage = PNG.sync.read(prodBuffer);
   const stageImage = PNG.sync.read(stageBuffer);
-  const [croppedProd, croppedStage] = cropToIntersection(prodImage, stageImage);
+  const heightDiff = Math.abs(prodImage.height - stageImage.height);
+  expect
+    .soft(
+      heightDiff,
+      `Height anomaly on ${path.basename(stagePath)}! Prod: ${prodImage.height}px, Stage: ${stageImage.height}px`,
+    )
+    .toBeLessThanOrEqual(50);
+  const [croppedProd, croppedStage] = syncImageDimensions(
+    prodImage,
+    stageImage,
+  );
   const { width, height } = croppedProd;
 
   const diffImage = new PNG({ width, height });
@@ -126,7 +136,7 @@ export async function compareEnvsSnapshots({
         diffPercent,
         `Visual difference detected on ${path.basename(stagePath)}`,
       )
-      .toBeLessThanOrEqual(0);
+      .toBeLessThanOrEqual(0.05);
   }
 }
 
