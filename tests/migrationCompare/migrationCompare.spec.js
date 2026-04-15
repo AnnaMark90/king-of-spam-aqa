@@ -73,7 +73,7 @@ for (const page of TEST_PAGES) {
         for (let i = 0; i < prodPaths.length; i++) {
           const currentProdPath = prodPaths[i];
           const currentStagePath = stagePaths[i];
-          const currentDiffPath = currentProdPath.replace("prod", "diff");
+          const currentDiffPath = currentProdPath.replace("production", "diff");
 
           await compareEnvsSnapshots({
             prodPath: currentProdPath,
