@@ -40,9 +40,9 @@ export async function takeSmartScreenshots(page, basePath) {
   }));
 
   if (bodySize.height <= MAX_HEIGHT) {
-    if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    const singlePath = path.join(parentDir, `${envName}-${name}${ext}`);
+    const singlePath = basePath;
     await page.screenshot({
       path: singlePath,
       fullPage: true,
