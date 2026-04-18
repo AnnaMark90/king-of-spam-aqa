@@ -2,24 +2,65 @@ import ExcelJS from "exceljs";
 import fs from "fs";
 import path from "path";
 
-const INPUT_EXCEL = path.resolve(
-  process.cwd(),
-  "testDataExcel/migrationTable.xlsx",
-);
-const OUTPUT_DIR = path.resolve(process.cwd(), "dataBatches");
-const targetTabs = process.argv.slice(2);
+const CONFIG = {
+  inputExcel: path.resolve(process.cwd(), "testDataExcel/migrationTable.xlsx"),
+  outputDir: path.resolve(process.cwd(), "dataBatches"),
+  targetColumn: 3,
+  headerRow: 1,
+  basePathToRemove: "/kingspan-dep/",
+};
+
+const isCellColored = (cell) => {
+  const fill = cell?.fill;
+  const hex = fill?.fgColor?.argb?.toUpperCase();
+  
+  return (
+    fill?.type === "pattern" &&
+    fill?.pattern === "solid" &&
+    !!hex &&
+    !["FFFFFFFF", "00FFFFFF"].includes(hex)
+  );
+};
+
+const getValidPathname = (cell) => {
+  const v = cell?.value;
+  if (!v) return null;
+
+  const rawUrl =
+    v?.richText?.map((rt) => rt.text).join("") ??
+    v?.hyperlink ??
+    (typeof v === "string" ? v : null) ??
+    cell?.text ??
+    v?.toString() ??
+    "";
+
+  const url = String(rawUrl).trim();
+  
+  if (["undefined", "null", ""].includes(url)) return null;
+
+  try {
+    const { pathname } = new URL(url);
+    return pathname.startsWith(CONFIG.basePathToRemove)
+      ? pathname.replace(new RegExp(`^${CONFIG.basePathToRemove}`), "/")
+      : pathname;
+  } catch {
+    return null;
+  }
+};
 
 async function generateLinks() {
-  if (!fs.existsSync(INPUT_EXCEL)) {
-    return console.error(`[ERROR] Файл не найден: ${INPUT_EXCEL}`);
+  const { inputExcel, outputDir, targetColumn, headerRow } = CONFIG;
+  const targetTabs = process.argv.slice(2);
+
+  if (!fs.existsSync(inputExcel)) {
+    console.error(`[ERROR] Файл не найден: ${inputExcel}`);
+    process.exit(1);
   }
 
-  if (!fs.existsSync(OUTPUT_DIR)) {
-    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-  }
+  fs.mkdirSync(outputDir, { recursive: true });
 
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile(INPUT_EXCEL);
+  await workbook.xlsx.readFile(inputExcel);
 
   workbook.eachSheet((worksheet) => {
     const localeName = worksheet.name.trim();
@@ -29,48 +70,22 @@ async function generateLinks() {
     const validPaths = [];
 
     worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) return;
+      const cell = row.getCell(targetColumn);
 
-      const cell = row.getCell(3);
-      const v = cell.value;
+      if (rowNumber === headerRow || isCellColored(cell)) return;
 
-      if (!v) return;
-
-      const rawUrl =
-        v?.richText?.map((rt) => rt.text).join("") ??
-        v?.hyperlink ??
-        (typeof v === "string" ? v : null) ??
-        cell.text ??
-        v?.toString() ??
-        "";
-
-      const url = String(rawUrl).trim();
-
-      const hex = cell.fill?.fgColor?.argb?.toUpperCase();
-      const isColored =
-        cell.fill?.type === "pattern" &&
-        cell.fill?.pattern === "solid" &&
-        !!hex &&
-        hex !== "FFFFFFFF" &&
-        hex !== "00FFFFFF";
-
-      if (isColored || !url || url === "undefined" || url === "null") return;
-
-      try {
-        validPaths.push(new URL(url).pathname);
-      } catch (e) {}
+      const cleanPath = getValidPathname(cell);
+      cleanPath && validPaths.push(cleanPath);
     });
 
     if (validPaths.length) {
-      const outputPath = path.join(OUTPUT_DIR, `${localeName}.txt`);
+      const outputPath = path.join(outputDir, `${localeName}.txt`);
       fs.writeFileSync(outputPath, validPaths.join("\n"), "utf-8");
-      console.log(
-        `[SUCCESS] ${localeName}: сгенерировано ${validPaths.length} ссылок -> ${outputPath}`,
-      );
+      console.log(`[SUCCESS] ${localeName}: сгенерировано ${validPaths.length} ссылок -> ${outputPath}`);
     } else {
       console.log(`[INFO] ${localeName}: пропущена (нет валидных ссылок).`);
     }
   });
 }
 
-generateLinks();
+generateLinks().catch(console.error);

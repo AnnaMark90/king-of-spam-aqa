@@ -115,9 +115,9 @@ export async function compareEnvsSnapshots({
     height,
     {
       threshold: 0.2,
-      diffColor: [255, 0, 255], // Ярко-розовый для реальных отличий
-      aaColor: [0, 255, 255], // Ярко-голубой для сглаживания шрифтов
-      alpha: 0.1, // Делаем фон сайта максимально бледным
+      diffColor: [255, 0, 0], // красный для отличий
+      aaColor: [255, 255, 0], // желтый для сглаживания шрифтов
+      alpha: 0.4, // для более видимого фона сайта
     },
   );
   if (mismatchPixels > 0) {
@@ -135,13 +135,14 @@ export async function compareEnvsSnapshots({
         console.error("Attachment error:", e);
       }
     }
-    const diffPercent = (mismatchPixels / (width * height)) * 100;
+    
+    // проверка на 30 пикселей
     expect
       .soft(
-        diffPercent,
-        `Visual difference detected on ${path.basename(stagePath)}. Mismatch: ${diffPercent.toFixed(2)}%`,
+        mismatchPixels,
+        `Visual difference detected on ${path.basename(stagePath)}. Mismatch: ${mismatchPixels} pixels`,
       )
-      .toBeLessThanOrEqual(20);
+      .toBeLessThanOrEqual(30);
   }
 }
 
