@@ -45,27 +45,26 @@ export class AnyPage extends BasePage {
   async freezeCarousels() {
     await this.page.addStyleTag({
       content: `
-        .carousel, .swiper-wrapper, .slick-track, [data-slot="carousel"], [aria-roledescription="carousel"] {
+        [aria-roledescription="carousel"],
+        [aria-roledescription="carousel"] * {
           animation-play-state: paused !important;
-        }
-        .carousel *, .swiper-wrapper *, .slick-track *, [data-slot="carousel"] * {
           transition: none !important;
+          animation: none !important;
         }
       `,
     });
     await this.page
       .evaluate(() => {
-        const carousels = document.querySelectorAll(
-          '.carousel, .swiper, .slick-slider, [data-slot="carousel"], [aria-roledescription="carousel"]',
-        );
-        carousels.forEach((carousel) => {
-          carousel.dispatchEvent(
-            new MouseEvent("mouseenter", { bubbles: true }),
-          );
-          carousel.dispatchEvent(
-            new MouseEvent("mouseover", { bubbles: true }),
-          );
-        });
+        document
+          .querySelectorAll('[aria-roledescription="carousel"]')
+          .forEach((carousel) => {
+            carousel.dispatchEvent(
+              new MouseEvent("mouseenter", { bubbles: true }),
+            );
+            carousel.dispatchEvent(
+              new MouseEvent("mouseover", { bubbles: true }),
+            );
+          });
       })
       .catch(() => {});
   }
