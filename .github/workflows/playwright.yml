@@ -4,6 +4,7 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  actions: write
 
 on:
   workflow_dispatch:
@@ -99,11 +100,11 @@ jobs:
           zip -r ../allure-html-report.zip .
       - name: Package Raw Snapshots
         run: |
-          if [ -d merged-snapshots/snapshots ] && [ "$(ls -A merged-snapshots/snapshots)" ]; then
-            cd merged-snapshots snapshots
-            zip -r raw-snapshots.zip snapshots
+          if [ -d "merged-snapshots" ]; then
+            mv merged-snapshots snapshots
+            zip -r ../raw-snapshots.zip snapshots
           else
-            echo "No merged snapshots directory found"
+            echo "No snapshots found"
           fi
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
@@ -124,3 +125,10 @@ jobs:
           path: raw-snapshots.zip
           if-no-files-found: ignore
           retention-days: 14
+      - name: Cleanup temporary snapshot shards
+        if: always()
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            snapshot-shard-*
+            blob-report-*
