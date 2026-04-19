@@ -102,7 +102,7 @@ jobs:
         run: |
           if [ -d "merged-snapshots" ]; then
             mv merged-snapshots snapshots
-            zip -r ../raw-snapshots.zip snapshots
+            zip -r raw-snapshots.zip snapshots
           else
             echo "No snapshots found"
           fi
@@ -123,7 +123,7 @@ jobs:
         with:
           name: raw-snapshots-zip
           path: raw-snapshots.zip
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 14
       - name: Cleanup temporary snapshot shards
         if: always()
